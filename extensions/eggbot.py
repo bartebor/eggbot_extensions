@@ -1325,12 +1325,17 @@ class EggBot( inkex.Effect ):
 		try:
 			serialPort = serial.Serial( strComPort, timeout=1 ) # 1 second timeout!
 
-			serialPort.setRTS()  # ??? remove
-			serialPort.setDTR()  # ??? remove
+			# power up sequence for arduino with enabled autoreset:
+			# reset arduino using DTR and wait 2 sec before sending commands
+
+			serialPort.setDTR(False)
+			time.sleep(0.1)
+			serialPort.setDTR(True)
+
 			serialPort.flushInput()
 			serialPort.flushOutput()
 
-			time.sleep( 0.1 )
+			time.sleep( 2 )
 
 			serialPort.write( 'v\r' )
 			strVersion = serialPort.readline()
