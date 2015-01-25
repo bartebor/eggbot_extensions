@@ -25,7 +25,7 @@ def findEiBotBoards():
 
 def findPorts():
 	for device in os.listdir( DEV_TREE ):
-		if not device.startswith( 'ttyACM' ):
+		if not device.startswith( 'ttyUSB' ) and not device.startswith( 'ttyACM' ):
 			continue
 		yield os.path.join( DEV_TREE , device )
 
