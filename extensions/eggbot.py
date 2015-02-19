@@ -155,6 +155,10 @@ class EggBot( inkex.Effect ):
 			action="store", type="inkbool",
 			dest="arduinoInit", default=False,
 			help="Arduino autoreset support." )
+		self.OptionParser.add_option( "--useSMQB",
+			action="store", type="inkbool",
+			dest="useSMQB", default=False,
+			help="Use smooth movement supported by EggDuino only." )
 		self.OptionParser.add_option( "--wraparound",
 			action="store", type="inkbool",
 			dest="wraparound", default=True,
@@ -288,6 +292,8 @@ class EggBot( inkex.Effect ):
 			unused_button = self.doRequest( 'QB\r' ) #Query if button pressed
 			self.svgLayer = 12345;  # indicate that we are plotting all layers.
 			self.plotToEggBot()
+			# disable motors if painting all at once, pen will not be changed
+			self.sendDisableMotors()
 
 
 		elif self.options.tab == '"resume"':
@@ -313,6 +319,7 @@ class EggBot( inkex.Effect ):
 			self.plotToEggBot()
 			if ( self.LayersPlotted == 0 ):
 				inkex.errormsg( gettext.gettext( "Truly sorry, but I did not find any numbered layers to plot." ) )
+			# do not disable motors since it would introduce positioning error during pen change
 
 		elif self.options.tab == '"setup"':
 			self.EggbotOpenSerial()
@@ -1252,6 +1259,8 @@ class EggBot( inkex.Effect ):
 
 			nTime = int( math.ceil( 1000 / self.fSpeed * distance( nDeltaX, nDeltaY ) ) )
 
+			strButton = '0'
+
 			while ( ( abs( nDeltaX ) > 0 ) or ( abs( nDeltaY ) > 0 ) ):
 				if ( nTime > 750 ):
 					xd = int( round( ( 750.0 * nDeltaX ) / nTime ) )
@@ -1274,23 +1283,35 @@ class EggBot( inkex.Effect ):
 					else:
 						xd2 = xd
 
-					strOutput = ','.join( ['SM', str( td ), str( yd2 ), str( xd2 )] ) + '\r'
 					self.svgTotalDeltaX += xd
 					self.svgTotalDeltaY += yd
-					self.doCommand( strOutput )
+
+					if self.options.useSMQB:
+						strOutput = ','.join( ['SMQB', str( td ), str( yd2 ), str( xd2 )] ) + '\r'
+						strButton = self.doRequest( strOutput )
+					else:
+						strOutput = ','.join( ['SM', str( td ), str( yd2 ), str( xd2 )] ) + '\r'
+						self.doCommand( strOutput )
 
 				nDeltaX -= xd
 				nDeltaY -= yd
 				nTime -= td
 
 			#self.doCommand('NI\r')  #Increment node counter on EBB
-			strButton = self.doRequest( 'QB\r' ) #Query if button pressed
+
+			if not self.options.useSMQB:
+				strButton = self.doRequest( 'QB\r' ) #Query if button pressed
+
 			if strButton[0] == '0':
 				pass #button not pressed
 			else:
+				if self.options.useSMQB and strButton[0] != '1':
+					inkex.errormsg( 'It seems that smooth movement command is not supported. Do you have compatible version of EggDuino?' );
+					inkex.errormsg( 'Use the "resume" feature to continue.' )
+				else:
+					inkex.errormsg( 'Plot paused by button press after segment number ' + str( self.nodeCount ) + '.' )
+
 				self.svgNodeCount = self.nodeCount;
-				inkex.errormsg( 'Plot paused by button press after segment number ' + str( self.nodeCount ) + '.' )
-				inkex.errormsg( 'Use the "resume" feature to continue.' )
 				#self.penUp()  # Should be redundant...
 				self.engraverOff()
 				self.bStopped = True
@@ -1327,7 +1348,7 @@ class EggBot( inkex.Effect ):
 		'''
 
 		try:
-			serialPort = serial.Serial( strComPort, timeout=1 ) # 1 second timeout!
+			serialPort = serial.Serial( strComPort, timeout=2 ) # 2 second timeout!
 
 			# power up sequence for arduino with enabled autoreset:
 			# reset arduino using DTR and wait 2 sec before sending commands

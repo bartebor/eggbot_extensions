@@ -16,6 +16,9 @@ Press 'Apply' to begin plotting.
 Or, look in the other tabs for
  configuration and other options.
 
+Motors will be disabled after plotting,
+if you do not want this, use Layers tab.
+
 Need help? Visit http://egg-bot.com/
 </_param>
     </page>
@@ -80,6 +83,8 @@ Note: Pressing 'Apply' will apply settings, but not plot.
            _gui-text="          Curve smoothing (lower for more):">.2</param>
       <param name="arduinoInit" type="boolean"
            _gui-text="          Arduino autoreset support">false</param>
+      <param name="useSMQB" type="boolean"
+           _gui-text="          Smooth movement (EggDuino only)">false</param>
       <_param name="help_options" type="description">
 Note: Pressing 'Apply' will apply settings, but not plot.
 </_param>
