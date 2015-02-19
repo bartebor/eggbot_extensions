@@ -151,6 +151,10 @@ class EggBot( inkex.Effect ):
 			action="store", type="inkbool",
 			dest="returnToHome", default=True,
 			help="Return to home at end of plot." )
+		self.OptionParser.add_option( "--arduinoInit",
+			action="store", type="inkbool",
+			dest="arduinoInit", default=False,
+			help="Arduino autoreset support." )
 		self.OptionParser.add_option( "--wraparound",
 			action="store", type="inkbool",
 			dest="wraparound", default=True,
@@ -1327,15 +1331,15 @@ class EggBot( inkex.Effect ):
 
 			# power up sequence for arduino with enabled autoreset:
 			# reset arduino using DTR and wait 2 sec before sending commands
+			if self.options.arduinoInit:
+				serialPort.setDTR(False)
+				time.sleep(0.1)
+				serialPort.setDTR(True)
 
-			serialPort.setDTR(False)
-			time.sleep(0.1)
-			serialPort.setDTR(True)
+				serialPort.flushInput()
+				serialPort.flushOutput()
 
-			serialPort.flushInput()
-			serialPort.flushOutput()
-
-			time.sleep( 2 )
+				time.sleep( 2 )
 
 			serialPort.write( 'v\r' )
 			strVersion = serialPort.readline()

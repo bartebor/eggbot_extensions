@@ -78,6 +78,8 @@ Note: Pressing 'Apply' will apply settings, but not plot.
            _gui-text="          Enable engraver, if attached">false</param>	
       <param name="smoothness" type="float"
            _gui-text="          Curve smoothing (lower for more):">.2</param>
+      <param name="arduinoInit" type="boolean"
+           _gui-text="          Arduino autoreset support">false</param>
       <_param name="help_options" type="description">
 Note: Pressing 'Apply' will apply settings, but not plot.
 </_param>
